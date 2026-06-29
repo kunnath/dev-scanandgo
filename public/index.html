@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#1a73e8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/jpeg" href="/poyaloo-icon.jpg">
+  <title>ScanAndGo – Kerala Bus Tracker</title>
+  
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Socket.IO (CDN for production, local for dev) -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
+  
+
+  
+  <!-- QR Scanner Library -->
+  <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js" integrity="sha256-ZgsSQ3sddH4+aLi+BoXAjLcoFAEQrSE/FnsUtm+LHY4=" crossorigin="anonymous"></script>
+
+  <!-- Razorpay Checkout SDK (Loaded Dynamically) -->
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/owner-dashboard-fix.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ─── Burger Menu: always visible before & after login ─── -->
+    <div id="burger-wrapper" class="hidden">
+      <button id="burger-btn" onclick="toggleBurgerMenu(event)" title="Explore more apps" aria-label="More apps menu">
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+        <span class="burger-bar"></span>
+      </button>
+      <div id="burger-dropdown" class="hidden" role="menu">
+        <div class="burger-dropdown-header">Explore More</div>
+        <a class="burger-dropdown-item" href="/news/" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <span class="bdi-icon">📰</span>
+          <span class="bdi-body"><strong>News & Updates</strong><small>Latest announcements</small></span>
+          <span class="bdi-arrow">→</span>
+        </a>
+        <a class="burger-dropdown-item" href="/team/" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <span class="bdi-icon">👥</span>
+          <span class="bdi-body"><strong>Our Team</strong><small>Who built ScanAndGo</small></span>
+          <span class="bdi-arrow">→</span>
+        </a>
+        <a class="burger-dropdown-item" href="mailto:support@poyaloo.com" target="_blank" rel="noopener noreferrer" role="menuitem">
+          <span class="bdi-icon">✉️</span>
+          <span class="bdi-body"><strong>Support</strong><small>Help & Support</small></span>
+          <span class="bdi-arrow">→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ─── Splash Screen ─── -->
+    <div id="splash" class="splash">
+      <div class="splash-content">
+        <div class="splash-icon">
+          <img src="/poyaloo-icon.jpg" alt="ScanAndGo logo" class="splash-icon-img">
+        </div>
+        <h1 class="brand-orange">ScanAndGo</h1>
+        <p>Kerala Bus Tracking & Tickets</p>
+        <div id="splash-spinner" class="spinner hidden"></div>
+      </div>
+    </div>
+
+    <!-- ─── Auth Screen ─── -->
+    <div id="auth-screen" class="screen hidden">
+      <div class="auth-container" style="position: relative;">
+        <!-- Language Selector Section -->
+        <div class="profile-lang-selector-container" id="profile-lang-container">
+          <span class="profile-lang-code" id="auth-lang-code-btn" title="Change Language">EN/ML</span>
+          <select id="auth-lang-select" class="form-select profile-lang-select" style="display: none;">
+            <option value="en">English (EN)</option>
+            <option value="ml">Malayalam (ML)</option>
+          </select>
+        </div>
+        <div class="auth-header">
+          <div class="auth-icon">
+            <img src="/poyaloo-icon.jpg" alt="ScanAndGo logo" class="auth-icon-img">
+          </div>
+          <h1 class="brand-orange">ScanAndGo</h1>
+          <p>Track buses. Buy tickets. Scan & board.</p>
+        </div>
+        
+        <div class="auth-tabs">
+          <button class="tab-btn active" data-tab="login" data-i18n="auth_login">Login</button>
+          <button class="tab-btn" data-tab="register" data-i18n="auth_register">Register</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label data-i18n="auth_username_label">Username / Phone</label>
+            <input type="text" id="login-phone" placeholder="Enter username or phone number" data-i18n="auth_username_placeholder" required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_password_label">Password</label>
+            <input type="password" id="login-password" placeholder="Enter password" data-i18n="auth_password_placeholder" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" data-i18n="auth_login">Login</button>
+          <div style="text-align:center;margin-top:12px;">
+            <a href="#" id="forgot-password-link" style="font-size:0.875rem;color:#1d4ed8;text-decoration:none;" data-i18n="auth_forgot_password">Forgot Password?</a>
+          </div>
+        </form>
+
+        <!-- ─── Forgot Password Inline Panel ─── -->
+        <div id="forgot-password-panel" class="hidden" style="margin-top:1rem;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:1.25rem;">
+          <h3 style="font-size:1rem;color:#0369a1;margin-bottom:0.75rem;">🔑 <span data-i18n="auth_reset_title">Reset Password</span></h3>
+          <p style="font-size:0.8rem;color:#374151;margin-bottom:1rem;" data-i18n="auth_reset_desc">Enter your registered email address. We'll send you a link to reset your password.</p>
+          <div class="form-group">
+            <label data-i18n="auth_email_label">Email Address</label>
+            <input type="email" id="forgot-email" placeholder="Enter your registered email" data-i18n="auth_email_placeholder" autocomplete="email">
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="forgot-submit-btn" class="btn btn-primary" style="flex:1;" onclick="submitForgotPassword()" data-i18n="auth_send_reset_btn">Send Reset Link</button>
+            <button class="btn btn-secondary" style="flex:0 0 auto;padding:0 14px;" onclick="hideForgotPanel()" data-i18n="auth_cancel_btn">Cancel</button>
+          </div>
+          <div id="forgot-msg" style="display:none;margin-top:10px;font-size:0.85rem;padding:8px 12px;border-radius:6px;"></div>
+        </div>
+
+        <form id="register-form" class="auth-form hidden">
+          <div class="form-group">
+            <label data-i18n="auth_fullname_label">Full Name</label>
+            <input type="text" id="reg-name" placeholder="Enter your name" data-i18n="auth_fullname_placeholder" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_phone_label">Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="Enter phone number" data-i18n="auth_phone_placeholder" required>
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_email_optional_label">Email (optional)</label>
+            <input type="email" id="reg-email" placeholder="Enter email" data-i18n="auth_email_optional_placeholder" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_create_password_label">Password</label>
+            <input type="password" id="reg-password" placeholder="Create password" data-i18n="auth_create_password_placeholder" required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label data-i18n="auth_role_label">Role</label>
+            <select id="reg-role" class="form-select">
+              <option value="passenger" data-i18n="auth_role_passenger">Passenger</option>
+              <option value="conductor" data-i18n="auth_role_conductor">Conductor</option>
+              <option value="owner" data-i18n="auth_role_owner">Owner</option>
+            </select>
+          </div>
+          <div id="passenger-fields">
+            <div class="form-group">
+              <label data-i18n="reg_ticket_category">Ticket Category</label>
+              <select id="reg-ticket-category" class="form-select">
+                <option value="adult" data-i18n="reg_cat_adult">🎫 Adult</option>
+                <option value="student" data-i18n="reg_cat_student">🎓 Student</option>
+                <option value="free" data-i18n="reg_cat_free">🆓 Free</option>
+              </select>
+            </div>
+            <div class="form-group hidden" id="pass-document-group" style="margin-top: 10px;">
+              <label><span data-i18n="reg_pass_document">Pass Document</span> <span style="color:red;">*</span></label>
+              <input type="file" id="reg-pass-document" class="form-input" accept="image/png, image/jpeg, application/pdf">
+              <div class="bus-hint" style="margin-top:4px;">Mandatory for Student/Free passes (PNG, JPEG, PDF up to 5MB).</div>
+            </div>
+          </div>
+          <div id="owner-subscription-fields" class="hidden">
+            <div class="form-group">
+              <label data-i18n="reg_owner_plan">Owner Subscription Plan</label>
+              <select id="reg-owner-plan" class="form-select">
+                <option value="" data-i18n="reg_select_plan_placeholder">-- Select Plan --</option>
+                <option value="thirty_days" data-i18n="plan_thirty_days">30 Days</option>
+                <option value="monthly" data-i18n="plan_monthly">Monthly</option>
+                <option value="yearly" data-i18n="plan_yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+          <div id="conductor-fields" class="hidden">
+            <div class="conductor-cascade">
+              <!-- Step 1: Zone -->
+              <div class="form-group cascade-step" id="cascade-zone">
+                <label><span class="step-badge">1</span> <span data-i18n="reg_select_zone">Select Zone</span></label>
+                <select id="reg-zone" class="form-select">
+                  <option value="" data-i18n="reg_choose_zone_placeholder">-- Choose Zone --</option>
+                  <option value="trivandrum">📍 Trivandrum</option>
+                  <option value="kannur">📍 Kannur</option>
+                  <option value="pathanamthitta">📍 Pathanamthitta</option>
+                </select>
+              </div>
+              <!-- Step 2: Route (filtered by zone) -->
+              <div class="form-group cascade-step cascade-locked" id="cascade-route">
+                <label><span class="step-badge">2</span> <span data-i18n="reg_assigned_route">Assigned Route</span></label>
+                <select id="reg-route" class="form-select" disabled>
+                  <option value="" data-i18n="reg_select_zone_first">-- Select Zone First --</option>
+                </select>
+              </div>
+              <!-- Step 3: Bus Number (filtered by route, with validation) -->
+              <div class="form-group cascade-step cascade-locked" id="cascade-bus">
+                <label><span class="step-badge">3</span> <span data-i18n="reg_bus_number">Bus Number</span></label>
+                <div class="bus-input-wrap">
+                  <input type="text" id="reg-bus" class="form-select" placeholder="-- Select Route First --" data-i18n="reg_select_zone_first" disabled autocomplete="off">
+                  <span id="bus-status-icon" class="bus-status-icon"></span>
+                </div>
+                <div id="bus-hint" class="bus-hint">Format: KL-XX-X-XXXX (e.g. KL-15-A-1234)</div>
+                <div id="bus-suggestions" class="bus-suggestions hidden"></div>
+              </div>
+            </div>
+            <div id="reg-upi-group" class="reg-upi-group">
+              <label for="reg-upi-id" data-i18n="reg_upi_label">💳 Your UPI ID (to receive ticket payments)</label>
+              <input type="text" id="reg-upi-id" placeholder="yourname@oksbi or 9876543210@paytm" class="form-input">
+              <div class="upi-hint">You'll receive money when you validate passenger tickets</div>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" data-i18n="auth_create_account_btn">Create Account</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ─── Main App ─── -->
+    <div id="main-app" class="hidden">
+      <!-- Top Bar -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <img src="/poyaloo-icon.jpg" alt="ScanAndGo logo" class="app-logo">
+          <span class="app-title">ScanAndGo</span>
+        </div>
+        <div class="topbar-center">
+          <select id="zone-select" class="zone-select" title="Switch travel zone">
+            <!-- options are populated dynamically from /api/zones -->
+          </select>
+        </div>
+        <div class="topbar-right">
+          <span id="wallet-badge" class="wallet-badge" title="Wallet balance">₹0</span>
+          <button id="profile-btn" class="icon-btn" title="Profile">👤</button>
+        </div>
+      </header>
+
+      <!-- Content Pages -->
+      <main class="content">
+        <!-- ─── Map Page ─── -->
+        <div id="page-map" class="page active">
+          <div id="map" class="map-container"></div>
+          <!-- Floating Quick Scan button for conductors -->
+          <div id="conductor-map-scan-btn-container" class="hidden" style="position: absolute; bottom: 20px; right: 20px; z-index: 1000;">
+            <button onclick="navigateTo('scanner')" class="btn btn-primary" style="box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-radius: 30px; padding: 14px 24px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; border: none;">
+              📷 <span data-i18n="scanner_scan_button">Scan Tickets</span>
+            </button>
+          </div>
+          <div class="map-overlay">
+            <div class="route-selector" style="display: none;">
+              <select id="route-select">
+                <option value="">Select a Route</option>
+              </select>
+            </div>
+
+            <!-- Destination Search experience for passengers -->
+            <div id="destination-search-container" class="destination-search-container hidden">
+              <div class="trip-search-panel-wrapper">
+                <div class="trip-search-indicator-col">
+                  <div class="circle-hollow"></div>
+                  <div class="connector-line"></div>
+                  <div class="circle-solid"></div>
+                </div>
+                <div class="trip-search-inputs-col">
+                  <!-- Origin input group -->
+                  <div class="trip-input-group">
+                    <span class="trip-input-label" data-i18n="trip_origin_label">Origin From</span>
+                    <div style="display: flex; align-items: center; width: 100%;">
+                      <input type="text" id="origin-input" placeholder="Origin From" autocomplete="off" data-i18n="trip_origin_placeholder">
+                      <button id="clear-origin-btn" class="clear-search-btn hidden">✕</button>
+                    </div>
+                    <div id="origin-suggestions" class="destination-suggestions hidden"></div>
+                  </div>
+                  
+                  <div class="trip-inputs-divider"></div>
+                  
+                  <!-- Destination input group -->
+                  <div class="trip-input-group">
+                    <span class="trip-input-label" data-i18n="trip_destination_label">Destination To</span>
+                    <div style="display: flex; align-items: center; width: 100%;">
+                      <input type="text" id="destination-input" placeholder="Destination To" autocomplete="off" data-i18n="trip_destination_placeholder">
+                      <button id="clear-dest-btn" class="clear-search-btn hidden">✕</button>
+                    </div>
+                    <div id="destination-suggestions" class="destination-suggestions hidden"></div>
+                  </div>
+                </div>
+                
+                <button id="swap-trip-btn" class="swap-trip-btn" title="Swap locations">⇅</button>
+              </div>
+              
+              <div class="trip-search-panel-wrapper" style="margin-top: 8px;">
+               <div class="trip-input-group" style="width: 100%;">
+                 <span class="trip-input-label" data-i18n="bus_number_label">Bus Number</span>
+                 <div style="display: flex; align-items: center; width: 100%;">
+                   <input type="text" id="bus-number-input" placeholder="Bus Number" autocomplete="off" data-i18n="bus_number_placeholder" />
+                   <button id="clear-bus-btn" class="clear-search-btn hidden">✕</button>
+                 </div>
+                 <div id="track-bus-suggestions" class="destination-suggestions hidden"></div>
+               </div>
+              </div>
+
+              
+              <div class="trip-view-tabs hidden" id="trip-view-tabs">
+                <button class="trip-tab-btn active" id="tab-track-route" data-i18n="tab_track_route">Track Route</button>
+                <button class="trip-tab-btn" id="tab-map-view" data-i18n="tab_map_view">MAP View</button>
+              </div>
+            </div>
+
+            <!-- Trip Summary Bar -->
+            <div id="trip-summary-bar" class="trip-summary-bar hidden">
+              <span class="trip-summary-text">📍 Your Location → <span id="trip-destination-name">Destination</span></span>
+              <button id="trip-summary-close" class="trip-summary-close">✕</button>
+            </div>
+
+            <!-- Route Options Panel -->
+            <div id="route-options-panel" class="route-options-panel hidden">
+              <div class="route-options-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; width: 100%;">
+                <h3 id="route-options-title" style="margin: 0; font-size: 13px; font-weight: 700; color: var(--text-primary);">Route Options</h3>
+                <button id="show-all-routes-btn" class="btn btn-primary btn-sm" style="display: none; padding: 4px 10px; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; border: none;">📋 Show All Options</button>
+              </div>
+              <div class="route-options-scroll" id="route-options-list"></div>
+            </div>
+          </div>
+          <div id="bus-info-panel" class="bus-info-panel hidden">
+            <button class="panel-close" onclick="closeBusPanel()">✕</button>
+            <div id="bus-info-content"></div>
+          </div>
+        </div>
+
+        <!-- ─── Routes Page ─── -->
+        <div id="page-routes" class="page hidden">
+          <div class="page-header">
+            <h2 data-i18n="routes_title">Routes & Stops</h2>
+            <div class="search-box">
+              <input type="text" id="route-search" placeholder="Search routes or stops..." data-i18n="routes_search_placeholder">
+            </div>
+          </div>
+          <div id="routes-list" class="card-list"></div>
+        </div>
+
+        <!-- ─── Owner Dashboard Page ─── -->
+        <div id="page-owner-dashboard" class="page hidden">
+          <div class="page-header">
+            <h2>📊 <span data-i18n="nav_dashboard">Dashboard</span></h2>
+            <div class="owner-dashboard-actions">
+              <span id="owner-dashboard-live-status" class="owner-dashboard-live-status">Live updates every 15s</span>
+              <button id="refresh-dashboard-btn" class="profile-logout-btn profile-logout-header-btn wallet-refresh-header-btn">
+                <span>🔄</span> <span data-i18n="profile_refresh">Refresh</span>
+              </button>
+            </div>
+          </div>
+          
+          <!-- Key Metrics Cards -->
+          <div class="dashboard-metrics-grid">
+            <div class="metric-card metric-primary">
+              <div class="metric-icon">🚌</div>
+              <div class="metric-content">
+                <div class="metric-label">Total Buses</div>
+                <div class="metric-value" id="metric-total-buses">-</div>
+              </div>
+            </div>
+            <div class="metric-card metric-success">
+              <div class="metric-icon">✅</div>
+              <div class="metric-content">
+                <div class="metric-label">Active Buses</div>
+                <div class="metric-value" id="metric-active-buses">-</div>
+              </div>
+            </div>
+            <div class="metric-card metric-info">
+              <div class="metric-icon">🎟️</div>
+              <div class="metric-content">
+                <div class="metric-label">Tickets Sold</div>
+                <div class="metric-value" id="metric-tickets-sold">-</div>
+              </div>
+            </div>
+            <div class="metric-card metric-warning">
+              <div class="metric-icon">💰</div>
+              <div class="metric-content">
+                <div class="metric-label">Total Revenue</div>
+                <div class="metric-value" id="metric-total-revenue">-</div>
+              </div>
+            </div>
+            <div class="metric-card metric-accent">
+              <div class="metric-icon">📅</div>
+              <div class="metric-content">
+                <div class="metric-label">Today's Revenue</div>
+                <div class="metric-value" id="metric-today-revenue">-</div>
+              </div>
+            </div>
+            <div class="metric-card metric-purple">
+              <div class="metric-icon">📊</div>
+              <div class="metric-content">
+                <div class="metric-label">Monthly Revenue</div>
+                <div class="metric-value" id="metric-month-revenue">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Revenue Breakdown Section -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>📈 Revenue Analytics</h3>
+              <div class="btn-group">
+                <button class="period-btn active" data-period="daily">Daily</button>
+                <button class="period-btn" data-period="monthly">Monthly</button>
+                <button class="period-btn" data-period="hourly">Today (Hourly)</button>
+              </div>
+            </div>
+            <div id="revenue-chart-container" class="chart-container">
+              <!-- Revenue chart will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Route-wise Performance -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>🛣️ Route-wise Performance</h3>
+            </div>
+            <div id="route-analytics-table" class="analytics-table-container">
+              <!-- Route analytics table will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Bus-wise Performance -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>🚌 Bus-wise Performance</h3>
+            </div>
+            <div id="bus-analytics-table" class="analytics-table-container">
+              <!-- Bus analytics table will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Recent Tickets -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>🎟️ Recent Tickets</h3>
+              <button id="view-all-tickets-btn" class="btn btn-secondary">View All</button>
+            </div>
+            <div id="recent-tickets-table" class="analytics-table-container">
+              <!-- Recent tickets will be rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Admin Dashboard Page ─── -->
+        <div id="page-admin-dashboard" class="page hidden">
+          <div class="page-header">
+            <h2>🧾 <span data-i18n="nav_admin">Admin Dashboard</span></h2>
+            <button id="refresh-admin-dashboard-btn" class="profile-logout-btn profile-logout-header-btn wallet-refresh-header-btn">
+              <span>🔄</span> <span data-i18n="profile_refresh">Refresh</span>
+            </button>
+          </div>
+
+          <div class="admin-metrics-grid">
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Total Billing Collected</div>
+              <div class="admin-metric-value" id="admin-total-billing">₹0</div>
+            </div>
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Billing (Last 30 Days)</div>
+              <div class="admin-metric-value" id="admin-billing-30d">₹0</div>
+            </div>
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Payments Today</div>
+              <div class="admin-metric-value" id="admin-payments-today">0</div>
+            </div>
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Owners (Active/Expired)</div>
+              <div class="admin-metric-value" id="admin-owner-subs">0 / 0</div>
+            </div>
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Users (Total)</div>
+              <div class="admin-metric-value" id="admin-users-total">0</div>
+            </div>
+            <div class="admin-metric-card">
+              <div class="admin-metric-label">Tickets (Today)</div>
+              <div class="admin-metric-value" id="admin-tickets-today">0</div>
+            </div>
+          </div>
+
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>Recent Subscription Payments</h3>
+            </div>
+            <div id="admin-recent-payments" class="analytics-table-container">
+              <div class="empty-state">No payment records yet</div>
+            </div>
+          </div>
+
+          <!-- Advertisements Management -->
+          <div class="dashboard-section">
+            <div class="section-header">
+              <h3>📢 Advertisements</h3>
+              <button class="btn btn-secondary" onclick="toggleAdForm()">+ New Ad</button>
+            </div>
+            <div id="admin-ad-form-wrap" class="hidden" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;margin-bottom:12px;">
+              <form id="admin-new-ad-form">
+                <div class="form-group">
+                  <label>Title *</label>
+                  <input type="text" id="ad-title" class="form-select" maxlength="80" placeholder="e.g. Evide – Local Services" required>
+                </div>
+                <div class="form-group">
+                  <label>Description *</label>
+                  <input type="text" id="ad-description" class="form-select" maxlength="200" placeholder="Short info about the website" required>
+                </div>
+                <div class="form-group">
+                  <label>Website URL</label>
+                  <input type="url" id="ad-url" class="form-select" placeholder="https://www.evide.in/">
+                </div>
+                <div class="form-group">
+                  <label>Image / Logo URL (optional)</label>
+                  <input type="url" id="ad-image-url" class="form-select" placeholder="https://...logo.png">
+                </div>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                  <button type="submit" class="btn btn-primary" style="flex:1;">Post Advertisement</button>
+                  <button type="button" class="btn btn-secondary" onclick="toggleAdForm()" style="flex:0 0 auto;padding:0 14px;">Cancel</button>
+                </div>
+              </form>
+            </div>
+            <div id="admin-ads-list"><div class="empty-state">No advertisements yet</div></div>
+          </div>
+        </div>
+        <!-- ─── Tickets Page ─── -->
+        <div id="page-tickets" class="page hidden">
+          <div class="page-header">
+            <h2 data-i18n="tickets_title">My Tickets</h2>
+            <button id="refresh-tickets-btn" class="profile-logout-btn profile-logout-header-btn wallet-refresh-header-btn">
+              <span>🔄</span> <span data-i18n="profile_refresh">Refresh</span>
+            </button>
+          </div>
+          <div id="tickets-list" class="card-list"></div>
+          <div id="no-tickets" class="empty-state hidden">
+            <span class="empty-icon">🎟️</span>
+            <p>No tickets yet. Book from the Routes page!</p>
+          </div>
+        </div>
+
+        <!-- ─── Book Ticket Page ─── -->
+        <div id="page-book" class="page hidden">
+          <div class="page-header">
+            <h2>🎟️ <span data-i18n="book_title">Book Ticket</span></h2>
+          </div>
+          <div class="booking-form">
+            <div class="booking-info-card">
+              <span class="info-icon">ℹ️</span>
+              <span data-i18n="book_info_desc">Select route, stops, and bus to see fare calculation</span>
+            </div>
+            
+            <div class="form-group">
+              <label data-i18n="profile_route">Route</label>
+              <select id="book-route">
+                <option value="" data-i18n="book_choose_route">Choose a route</option>
+              </select>
+              <div class="validation-error" id="book-route-error" style="color: #ea4335; font-size: 12px; margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="book_from_stop_label">From Stop</label>
+              <select id="book-from">
+                <option value="" data-i18n="book_select_source">Boarding stop</option>
+              </select>
+              <div class="validation-error" id="book-from-error" style="color: #ea4335; font-size: 12px; margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="book_to_stop_label">To Stop</label>
+              <select id="book-to">
+                <option value="" data-i18n="book_select_dest">Destination stop</option>
+              </select>
+              <div class="validation-error" id="book-to-error" style="color: #ea4335; font-size: 12px; margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="form-group">
+              <label data-i18n="profile_bus">Bus</label>
+              <select id="book-bus">
+                <option value="" data-i18n="book_select_bus">Choose a bus</option>
+              </select>
+              <div class="validation-error" id="book-bus-error" style="color: #ea4335; font-size: 12px; margin-top: 4px; display: none;"></div>
+            </div>
+            <div class="form-group">
+              <label for="ticket-count" data-i18n="book_ticket_count_label">Number of Tickets</label>
+              <input type="number" id="ticket-count" min="1" max="6" value="1" class="ticket-count-input">
+              <div class="validation-error" id="ticket-count-error" style="color: #ea4335; font-size: 12px; margin-top: 4px; display: none;"></div>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px; margin-bottom: 12px;">
+              <label for="book-poyaloo-card" style="font-size: 13px; font-weight: 600;" data-i18n="book_pay_poyaloo_card_label">Pay using Poyaloo Pass Card Number (Optional)</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="book-poyaloo-card" placeholder="e.g. 50991234567" class="form-input" maxlength="11" style="font-size: 13px; padding: 10px; flex: 1;" data-i18n="book_pay_poyaloo_card_placeholder">
+                <button type="button" id="scan-poyaloo-card-btn" class="btn btn-secondary" style="padding: 10px 14px; font-size: 13px; display: none; align-items: center; gap: 4px; white-space: nowrap;">
+                  📷 <span data-i18n="book_scan_qr_btn">Scan QR</span>
+                </button>
+              </div>
+              <div class="bus-hint" style="margin-top: 4px; font-size: 11px; color: #64748b;" data-i18n="book_wallet_balance_hint">Leave blank to pay with your own wallet balance.</div>
+            </div>
+            
+            <!-- Fare Summary Card -->
+            <div id="fare-display" class="fare-display hidden">
+              <div class="fare-summary-card">
+                <div class="fare-row">
+                  <span class="fare-label" data-i18n="book_price_per_ticket">Price per ticket</span>
+                  <span class="fare-value" id="ticket-price">₹0</span>
+                </div>
+                <div class="fare-row fare-row-total">
+                  <span class="fare-label" data-i18n="book_total_amount">Total Amount</span>
+                  <span class="fare-value fare-total" id="total-fare">₹0</span>
+                </div>
+              </div>
+            </div>
+            
+            <button id="book-ticket-btn" class="btn btn-primary btn-block">🎟️ <span data-i18n="book_pay_now">Book Ticket & Pay</span></button>
+          </div>
+        </div>
+
+        <!-- ─── Wallet Page ─── -->
+        <div id="page-wallet" class="page hidden">
+          <div class="page-header">
+            <h2>💳 <span data-i18n="wallet_title">Wallet</span></h2>
+            <button id="refresh-wallet-btn" class="profile-logout-btn profile-logout-header-btn wallet-refresh-header-btn">
+              <span>🔄</span> <span data-i18n="profile_refresh">Refresh</span>
+            </button>
+          </div>
+          <div class="wallet-page-content">
+
+            <!-- Wallet Balance Card -->
+            <div class="wallet-card">
+              <div class="wallet-card-bg"></div>
+              <div class="wallet-card-content">
+                <div class="wallet-card-label" data-i18n="wallet_card_label">ScanAndGo Wallet</div>
+                <div class="wallet-balance-display">
+                  <span class="wallet-currency">₹</span>
+                  <span id="wallet-page-balance" class="wallet-balance-num">0</span>
+                </div>
+                <div class="wallet-card-name" id="wallet-card-name"></div>
+              </div>
+              <div class="wallet-card-icon">👛</div>
+            </div>
+
+            <!-- Quick Add -->
+            <div class="wallet-section-card">
+              <h3 data-i18n="wallet_quick_add_title">Quick Add</h3>
+              <div class="quick-amount-grid">
+                <button class="quick-amt-btn" data-amount="50">₹50</button>
+                <button class="quick-amt-btn" data-amount="100">₹100</button>
+                <button class="quick-amt-btn" data-amount="200">₹200</button>
+                <button class="quick-amt-btn" data-amount="500">₹500</button>
+                <button class="quick-amt-btn" data-amount="1000">₹1000</button>
+                <button class="quick-amt-btn" data-amount="2000">₹2000</button>
+              </div>
+            </div>
+
+            <!-- Add Money Form -->
+            <div class="wallet-section-card">
+              <h3 data-i18n="profile_add_money">Add Money</h3>
+              <div class="wallet-amount-input-group">
+                <span class="wallet-amount-prefix">₹</span>
+                <input type="number" id="wallet-topup-amount" placeholder="Enter amount" min="1" max="10000" step="1" class="wallet-amount-input" data-i18n="wallet_enter_amount_placeholder">
+              </div>
+
+              <!-- Payment Methods -->
+              <div class="wallet-pay-methods">
+                <h4 data-i18n="wallet_pay_using">Pay using</h4>
+                <div class="wallet-pay-options">
+                  <label class="wallet-pay-option selected" data-method="gpay">
+                    <input type="radio" name="wallet-pay-method" value="gpay" checked>
+                    <div class="wpo-icon">🇬</div>
+                    <span>Google Pay</span>
+                  </label>
+                  <label class="wallet-pay-option" data-method="phonepe">
+                    <input type="radio" name="wallet-pay-method" value="phonepe">
+                    <div class="wpo-icon">📱</div>
+                    <span>PhonePe</span>
+                  </label>
+                  <label class="wallet-pay-option" data-method="upi">
+                    <input type="radio" name="wallet-pay-method" value="upi">
+                    <div class="wpo-icon">🔗</div>
+                    <span data-i18n="book_pay_upi">Any UPI</span>
+                  </label>
+                </div>
+              </div>
+
+              <button id="btn-wallet-add-money" class="btn-wallet-pay" disabled>
+                <span class="bwp-icon">🔒</span>
+                <span class="bwp-text" data-i18n="wallet_add_money">Add Money</span>
+              </button>
+              <p class="wallet-secure-note" data-i18n="wallet_secure_note">🔐 Secured by Razorpay · 256-bit encrypted</p>
+            </div>
+
+            <!-- Poyaloo Pass Card Recharge Form -->
+            <div class="wallet-section-card">
+              <h3 data-i18n="recharge_pass_title">Recharge Poyaloo Pass / Wallet</h3>
+              <p style="font-size: 12px; color: #64748b; margin-bottom: 12px; line-height: 1.4;" data-i18n="wallet_recharge_desc">Enter the 11-digit card number shown on the physical or digital Poyaloo bus pass to recharge card balance and wallet.</p>
+              
+              <div class="form-group" style="margin-bottom: 12px;">
+                <label style="font-size: 12px; margin-bottom: 4px; display: block;" data-i18n="wallet_card_num_label">11-Digit Card Number</label>
+                <input type="text" id="wallet-recharge-card-number" placeholder="e.g. 50991234567" class="form-input" maxlength="11" style="font-size: 13px; padding: 10px;" data-i18n="wallet_card_num_placeholder">
+              </div>
+              
+              <div class="wallet-amount-input-group" style="margin-bottom: 12px;">
+                <span class="wallet-amount-prefix" style="font-size: 18px; top: 10px;">₹</span>
+                <input type="number" id="wallet-recharge-card-amount" placeholder="Enter recharge amount" min="1" max="10000" step="1" class="wallet-amount-input" style="font-size: 16px; padding-left: 24px; height: 44px;" data-i18n="wallet_recharge_amount_placeholder">
+              </div>
+              
+              <!-- Payment Selection for recharge -->
+              <div class="wallet-pay-methods" style="margin-bottom: 12px; text-align: left;">
+                <h4 style="font-size: 12px; margin-bottom: 6px; color: #475569;" data-i18n="wallet_pay_using_colon">Pay using:</h4>
+                <div class="wallet-pay-options" style="display: flex; gap: 8px;">
+                  <label class="recharge-pay-option-item selected" data-recharge-method="gpay" style="flex: 1; padding: 8px; font-size: 11px;">
+                    <input type="radio" name="recharge-pay-method" value="gpay" checked>
+                    <span>GPay</span>
+                  </label>
+                  <label class="recharge-pay-option-item" data-recharge-method="phonepe" style="flex: 1; padding: 8px; font-size: 11px;">
+                    <input type="radio" name="recharge-pay-method" value="phonepe">
+                    <span>PhonePe</span>
+                  </label>
+                  <label class="recharge-pay-option-item" data-recharge-method="upi" style="flex: 1; padding: 8px; font-size: 11px;">
+                    <input type="radio" name="recharge-pay-method" value="upi">
+                    <span data-i18n="book_pay_upi">UPI/Card</span>
+                  </label>
+                </div>
+              </div>
+              
+              <button id="btn-recharge-pass-card" class="btn-wallet-pay">
+                <span class="bwp-icon">⚡</span>
+                <span class="bwp-text" data-i18n="recharge_card_btn">Recharge Card & Wallet</span>
+              </button>
+            </div>
+
+            <!-- Transaction History -->
+            <div class="wallet-section-card">
+              <h3 data-i18n="wallet_recent_txns">Recent Transactions</h3>
+              <div id="wallet-txn-list" class="wallet-txn-list">
+                <div class="wallet-txn-empty" data-i18n="wallet_no_transactions">No transactions yet</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ─── QR Scanner Page (Conductor) ─── -->
+        <div id="page-scanner" class="page hidden">
+          <div class="page-header">
+            <h2>🔷 <span data-i18n="scanner_title">Conductor Panel</span></h2>
+          </div>
+
+          <!-- Earnings Card -->
+          <div id="conductor-earnings-card" class="earnings-card" style="display:none;">
+            <div class="earnings-card-bg"></div>
+            <div class="earnings-card-content">
+              <div class="earnings-label">Today's Earnings</div>
+              <div class="earnings-amount-display">
+                <span class="earnings-currency">₹</span>
+                <span id="conductor-today-earnings" class="earnings-amount">0.00</span>
+              </div>
+              <div class="earnings-total">
+                Total: ₹<span id="conductor-total-earnings">0.00</span>
+              </div>
+            </div>
+            <div class="earnings-card-icon">💰</div>
+            <div class="earnings-upi-id">
+              <span id="earnings-upi-display"></span>
+            </div>
+          </div>
+
+          <!-- Scan / Validated / UPI Tabs -->
+          <div class="conductor-tabs">
+            <button class="ctab-btn active" data-ctab="scan">📷 <span data-i18n="scanner_scan_tab">Scan Ticket</span></button>
+            <button class="ctab-btn" data-ctab="validated">📋 <span data-i18n="scanner_validated_tab">Validated</span></button>
+            <button class="ctab-btn" data-ctab="upi-settings">💳 <span data-i18n="scanner_upi_tab">UPI</span></button>
+          </div>
+
+          <!-- ── Scan Tab ── -->
+          <div id="ctab-scan" class="ctab-content">
+
+            <!-- EM1630 hidden keyboard-wedge capture textarea -->
+            <textarea id="em1630-input"
+              style="position:absolute;opacity:0;height:1px;width:1px;left:-9999px;pointer-events:none;"
+              autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+              tabindex="-1" aria-hidden="true"></textarea>
+
+            <!-- EM1630 status + voice toggle row -->
+            <div class="conductor-voice-row">
+              <div id="em1630-status" class="em1630-status em1630-idle">📡 EM1630 Ready</div>
+              <button id="voice-toggle-btn"
+                class="voice-toggle-btn voice-on"
+                onclick="toggleConductorVoice()">🔊 <span data-i18n="scanner_voice_on">Voice On</span></button>
+            </div>
+
+            <div class="scanner-section">
+              <!-- Camera Scanner -->
+              <div id="qr-reader-container" class="qr-reader-container">
+                <div id="qr-reader" class="qr-reader"></div>
+                <div id="qr-file-reader" style="display:none;"></div>
+              </div>
+              <div class="scanner-controls">
+                <button id="start-scan-btn" class="btn btn-primary btn-block">
+                  📷 <span data-i18n="scanner_open_camera">Open Camera & Scan</span>
+                </button>
+                <button id="stop-scan-btn" class="btn btn-danger btn-block hidden">
+                  ⏹ <span data-i18n="scanner_stop_camera">Stop Camera</span>
+                </button>
+              </div>
+
+              <!-- Image scan fallback (works without HTTPS) -->
+              <div class="image-scan-section">
+                <p class="scan-divider">── or scan from photo ──</p>
+                
+                <!-- Viewfinder guide -->
+                <div id="photo-viewfinder" class="photo-viewfinder">
+                  <div class="viewfinder-inner">
+                    <canvas id="photo-preview-canvas" class="photo-preview-canvas"></canvas>
+                    <div id="viewfinder-overlay" class="viewfinder-overlay hidden">
+                      <div class="focus-square">
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
+                      </div>
+                    </div>
+                    <div id="viewfinder-status" class="viewfinder-status hidden">
+                      <div class="scan-pulse"></div>
+                      <span>Scanning QR code...</span>
+                    </div>
+                    <div id="viewfinder-placeholder" class="viewfinder-placeholder">
+                      <span class="vf-icon">📷</span>
+                      <span class="vf-text">Point camera at QR code</span>
+                      <span class="vf-subtext">Photo will appear here</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="photo-scan-controls">
+                  <label class="btn btn-secondary btn-photo-scan">
+                    📸 <span data-i18n="scanner_take_photo">Take Photo of QR</span>
+                    <input type="file" id="qr-file-input" accept="image/*" capture="environment" style="display:none;">
+                  </label>
+                  <label class="btn btn-secondary btn-photo-gallery">
+                    🖼️ <span data-i18n="scanner_from_gallery">From Gallery</span>
+                    <input type="file" id="qr-gallery-input" accept="image/*" style="display:none;">
+                  </label>
+                </div>
+                <p class="scan-hint">Take a clear photo with the QR code centered in the frame</p>
+              </div>
+
+              <!-- Manual fallback -->
+              <div class="manual-entry">
+                <details>
+                  <summary data-i18n="scanner_paste_manual">Or paste QR data manually</summary>
+                  <textarea id="qr-input" rows="3" placeholder="Paste QR code data here..." data-i18n="scanner_paste_placeholder"></textarea>
+                  <button id="validate-btn" class="btn btn-primary btn-block" style="margin-top:8px;" data-i18n="scanner_validate_manual">Validate Manually</button>
+                </details>
+              </div>
+
+              <!-- Validation Result -->
+              <div id="validation-result" class="validation-result hidden"></div>
+
+              <!-- Scan Queue (EM1630 + camera) -->
+              <div id="scan-queue" class="scan-queue hidden">
+                <div class="scan-queue-header">
+                  <span class="scan-queue-title">📋 Validation Queue</span>
+                  <span class="queue-count-badge" id="queue-count">0</span>
+                </div>
+                <div id="queue-items"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Validated Tickets Tab ── -->
+          <div id="ctab-validated" class="ctab-content hidden">
+            <div class="validated-section">
+              <div class="validated-header">
+                <div class="validated-stats">
+                  <span id="validated-count" class="stat-badge stat-green">0 validated</span>
+                  <span id="overtime-count" class="stat-badge stat-red">0 overtime</span>
+                </div>
+                <button id="refresh-validated-btn" class="btn-icon-sm" title="Refresh">🔄</button>
+              </div>
+              <div id="validated-tickets-list" class="card-list"></div>
+              <div id="no-validated" class="empty-state hidden">
+                <span class="empty-icon">📋</span>
+                <p>No validated tickets yet today.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── UPI Settings Tab ── -->
+          <div id="ctab-upi-settings" class="ctab-content hidden">
+            <div class="upi-settings-card">
+              <h3>💳 UPI Payment Settings</h3>
+              <p class="upi-settings-desc">Add your UPI ID to receive ticket payments directly when you validate passenger QR codes.</p>
+              
+              <div class="upi-form-group">
+                <label for="conductor-upi-input">UPI ID</label>
+                <div class="upi-input-wrapper">
+                  <span class="upi-input-icon">📱</span>
+                  <input type="text" id="conductor-upi-input" placeholder="yourname@oksbi" class="upi-setting-input" />
+                </div>
+                <div class="upi-examples">
+                  <span>Examples: ravi@oksbi, 9876543210@paytm, name@ybl</span>
+                </div>
+              </div>
+
+                <div class="upi-form-group">
+                <label for="conductor-upi-name">Display Name (on UPI)</label>
+                <input type="text" id="conductor-upi-name" placeholder="Your name" class="upi-setting-input upi-name-input" />
+              </div>
+
+              <button id="btn-save-upi" class="btn-save-upi">Save UPI Details</button>
+
+              <div id="upi-save-status" class="upi-save-status" style="display:none;"></div>
+            </div>
+
+            <div class="settlements-card">
+              <h3>📋 Recent Settlements</h3>
+              <div id="conductor-settlements-list" class="settlements-list">
+                <div class="settlement-empty">No settlements yet. Validate tickets to earn.</div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+        <div id="page-profile" class="page hidden">
+          <div class="page-header">
+            <h2 data-i18n="profile_title">Profile</h2>
+            <button id="logout-btn" class="profile-logout-btn profile-logout-header-btn">
+              <span>🚪</span> <span data-i18n="profile_logout">Logout</span>
+            </button>
+          </div>
+
+          <!-- Profile Hero Card -->
+          <div class="profile-hero">
+            <div class="profile-hero-bg"></div>
+            <div class="profile-hero-content">
+              <div class="profile-avatar-ring">
+                <div class="profile-avatar-inner" id="profile-avatar-letter">A</div>
+              </div>
+              <div class="profile-hero-info">
+                <div class="profile-name-row">
+                  <h3 id="profile-name" class="profile-hero-name"></h3>
+                  <!-- Membership coin badge — passengers only, populated by JS -->
+                  <div id="profile-membership-badge" style="display:none;"></div>
+                </div>
+                <p id="profile-phone" class="profile-hero-phone"></p>
+                <p id="profile-email" class="profile-hero-email"></p>
+                <div class="profile-hero-badges">
+                  <span id="profile-role" class="profile-role-badge"></span>
+                  <span id="profile-ticket-category-badge" class="profile-ticket-category-badge"></span>
+                </div>
+                <div style="margin-top:6px; display: flex; flex-direction: column; gap: 4px;">
+                  <label style="font-size:0.8rem;cursor:pointer;color:rgba(255,255,255,0.85);">
+                    <input type="checkbox" id="profile-hide-phone-checkbox" style="margin-right:6px;vertical-align:middle;">
+                    <span data-i18n="profile_hide_phone">Hide phone from conductor</span>
+                  </label>
+                  <div id="profile-hide-phone-hint" style="font-size:0.75rem;color:rgba(255,255,255,0.65);margin-top:2px;display:none;">Phone hidden from conductors.</div>
+
+                  <label id="profile-hide-pass-container" style="font-size:0.8rem;cursor:pointer;color:rgba(255,255,255,0.85); display: none;">
+                    <input type="checkbox" id="profile-hide-pass-checkbox" style="margin-right:6px;vertical-align:middle;">
+                    <span data-i18n="profile_hide_pass">Hide Poyaloo Pass card</span>
+                  </label>
+
+                  <label id="profile-block-pass-container" style="font-size:0.8rem;cursor:pointer;color:rgba(255,255,255,0.85); display: none;">
+                    <input type="checkbox" id="profile-block-pass-checkbox" style="margin-right:6px;vertical-align:middle;">
+                    🔒 <span data-i18n="profile_block_pass">Block Poyaloo Pass card</span>
+                  </label>
+                  <div id="profile-block-pass-hint" style="font-size:0.72rem;color:#fca5a5;margin-top:2px;display:none;">Physical card blocked. Only wallet payment works.</div>
+                </div>
+                <!-- Pass Document View (passengers only) -->
+                <div id="profile-pass-document-section" style="display:none; margin-top:10px;">
+                  <button id="profile-view-pass-btn" class="btn btn-secondary" style="font-size:0.8rem; padding: 4px 12px; border-radius: 6px;">
+                    👁️ <span data-i18n="profile_view_pass">View Pass</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Poyaloo Pass Card -->
+          <div id="poyaloo-pass-card" class="profile-section-card hidden">
+            <div class="profile-section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="profile-section-icon">🎫</span>
+                <span class="profile-section-title" data-i18n="profile_poyaloo_pass">Poyaloo Pass</span>
+              </div>
+              <button id="poyaloo-pass-hide-btn" class="btn-icon-sm" style="background: #f1f5f9; border: none; border-radius: 6px; padding: 4px 8px; font-size: 11px; cursor: pointer; color: #64748b; margin-bottom: 0;" title="Hide Poyaloo Pass"><span>🙈</span> <span data-i18n="profile_hide_btn">Hide</span></button>
+            </div>
+            
+            <!-- Inactive State -->
+            <div id="poyaloo-pass-inactive" class="poyaloo-pass-promo">
+              <p data-i18n="pass_buy_promo">Purchase a Poyaloo Bus Pass remotely to travel digitally or physically. Top-up using card number anywhere.</p>
+              
+              <!-- Payment Selection for Pass -->
+              <div class="wallet-pay-methods" style="margin-bottom: 12px; text-align: left;">
+                <h4 style="font-size: 12px; margin-bottom: 6px; color: #475569;" data-i18n="pass_buy_using">Pay ₹150 using:</h4>
+                <div class="wallet-pay-options" style="display: flex; gap: 8px;">
+                  <label class="pass-pay-option-item selected" data-pass-method="wallet" style="flex: 1; padding: 8px; font-size: 12px;">
+                    <input type="radio" name="pass-pay-method" value="wallet" checked>
+                    <span data-i18n="book_pay_wallet">Wallet</span>
+                  </label>
+                  <label class="pass-pay-option-item" data-pass-method="upi" style="flex: 1; padding: 8px; font-size: 12px;">
+                    <input type="radio" name="pass-pay-method" value="upi">
+                    <span data-i18n="book_pay_upi">UPI/Card</span>
+                  </label>
+                </div>
+              </div>
+
+              <button id="poyaloo-pass-buy-btn" class="btn btn-primary btn-block">🎟️ <span data-i18n="pass_buy_pass_btn">Buy Poyaloo Pass (₹150)</span></button>
+            </div>
+            
+            <!-- Active State -->
+            <div id="poyaloo-pass-active-container" class="hidden">
+              <div class="digital-pass-card">
+                <!-- Kerala Traditional Emblem representing Kerala -->
+                <svg class="kerala-emblem" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+                  <g fill="#16a34a">
+                    <!-- Trunk -->
+                    <path d="M74,40 L78,40 L79,80 L75,80 Z" />
+                    <!-- Canopy leaves -->
+                    <path d="M76,40 C76,20 60,10 50,15 C62,18 70,30 76,40 Z" />
+                    <path d="M76,40 C76,20 92,10 102,15 C90,18 82,30 76,40 Z" />
+                    <path d="M76,40 C65,30 50,30 42,40 C54,40 66,42 76,40 Z" />
+                    <path d="M76,40 C87,30 102,30 110,40 C98,40 86,42 76,40 Z" />
+                    <path d="M76,40 C60,40 48,50 44,62 C52,54 64,48 76,40 Z" />
+                    <path d="M76,40 C92,40 104,50 108,62 C100,54 88,48 76,40 Z" />
+                  </g>
+                  <text x="76" y="88" fill="#ffffff" font-family="'Inter', sans-serif" font-weight="800" font-size="10" text-anchor="middle" letter-spacing="1">KERALA</text>
+                  <text x="76" y="96" fill="#facc15" font-family="'Georgia', serif" font-style="italic" font-weight="700" font-size="6.5" text-anchor="middle">God's Own Country</text>
+                </svg>
+
+                <div class="pass-chip-row">
+                  <div class="pass-logo">
+                    <span data-i18n="profile_poyaloo_pass">Poyaloo Pass</span>
+                    <span class="pass-sub-logo" data-i18n="profile_kerala_traveler">Kerala Traveler</span>
+                  </div>
+                  <span class="pass-status-indicator" data-i18n="pass_smart_card_active">● Active</span>
+                </div>
+                
+                <!-- Gold Smart Card Chip representation -->
+                <div class="pass-chip">
+                  <div class="chip-line horizontal"></div>
+                  <div class="chip-line vertical"></div>
+                </div>
+
+                <div class="pass-middle">
+                  <div class="pass-photo-area">
+                    <img id="pass-photo-display" src="" alt="Profile Photo" class="hidden">
+                    <div id="pass-photo-placeholder" class="pass-photo-placeholder">👤</div>
+                    <label class="pass-photo-upload-label">
+                      📷 <span data-i18n="profile_update_photo">Update</span>
+                      <input type="file" id="pass-photo-input" accept="image/png, image/jpeg" style="display:none;">
+                    </label>
+                  </div>
+                  
+                  <div class="pass-details">
+                    <div class="pass-passenger-name" id="pass-name-display">-</div>
+                    <div class="pass-card-number" id="pass-card-number-display">Card: ---- ---- ---</div>
+                    <div class="pass-wallet-row">
+                      <span class="pass-wallet-label" data-i18n="pass_smart_card_balance">Balance:</span>
+                      <span class="pass-wallet-value" id="pass-wallet-display">₹0</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pass-bottom">
+                  <div id="pass-qr-container" class="pass-qr-container">
+                    <img id="pass-qr-image" src="" alt="Pass QR Code">
+                  </div>
+                  <div class="pass-instructions" data-i18n="profile_smart_card_desc">
+                    Scan QR code or use the 11-digit card number to board.
+                  </div>
+                </div>
+              </div>
+
+              <!-- High-resolution Pass download button -->
+              <button id="poyaloo-pass-download-btn" class="btn btn-secondary btn-block" style="margin-top: 10px; margin-bottom: 20px; font-size: 13px; padding: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; font-weight: 600;">
+                📥 <span data-i18n="profile_download_digital_pass">Download Digital Pass</span>
+              </button>
+              
+              <!-- Physical Card Order section -->
+              <div class="physical-card-section">
+                <h4 data-i18n="profile_physical_card_delivery">📦 Physical Card Delivery</h4>
+                <div id="physical-card-status" class="physical-status-text" data-i18n="profile_physical_card_status">First card is FREE! Subsequent cards cost ₹40.</div>
+                
+                <div id="physical-card-form" class="physical-card-form-group">
+                  <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="physical-card-house" placeholder="House Name / Street Address" class="form-input" style="font-size: 13px; padding: 10px; margin-bottom: 0;" data-i18n="profile_house_placeholder">
+                    <input type="text" id="physical-card-city" placeholder="Post Office / City" class="form-input" style="font-size: 13px; padding: 10px; margin-bottom: 0;" data-i18n="profile_city_placeholder">
+                    <input type="text" id="physical-card-zip" placeholder="Zipcode" class="form-input" style="font-size: 13px; padding: 10px; margin-bottom: 0;" data-i18n="profile_zip_placeholder">
+                    <input type="text" id="physical-card-phone" placeholder="Contact Phone" class="form-input" style="font-size: 13px; padding: 10px; margin-bottom: 0;" data-i18n="profile_phone_placeholder">
+                  </div>
+                  <button id="poyaloo-pass-physical-btn" class="btn btn-secondary btn-block" style="font-size: 13px; padding: 10px;" data-i18n="profile_send_physical_btn">Send Physical Card</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wallet Quick Card -->
+          <div class="profile-section-card">
+            <div class="profile-wallet-row">
+              <div class="profile-wallet-left">
+                <span class="profile-wallet-label" data-i18n="profile_wallet_balance">Wallet Balance</span>
+                <span class="profile-wallet-value" id="profile-wallet">₹0</span>
+              </div>
+              <button class="profile-wallet-btn" onclick="navigateTo('wallet')">
+                <span>💳</span> <span data-i18n="profile_add_money">Add Money</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Conductor UPI Card (shown only for conductors) -->
+          <div id="profile-upi-card" class="profile-section-card hidden">
+            <div class="profile-section-header">
+              <span class="profile-section-icon">💰</span>
+              <span class="profile-section-title" data-i18n="profile_upi_earnings">UPI & Earnings</span>
+            </div>
+            <div class="profile-upi-summary">
+              <div class="profile-earning-item">
+                <span class="profile-earning-label" data-i18n="profile_today">Today</span>
+                <span class="profile-earning-value" id="profile-today-earnings">₹0</span>
+              </div>
+              <div class="profile-earning-divider"></div>
+              <div class="profile-earning-item">
+                <span class="profile-earning-label" data-i18n="profile_total">Total</span>
+                <span class="profile-earning-value" id="profile-total-earnings">₹0</span>
+              </div>
+              <div class="profile-earning-divider"></div>
+              <div class="profile-earning-item">
+                <span class="profile-earning-label" data-i18n="profile_upi_id">UPI ID</span>
+                <span class="profile-earning-upi" id="profile-upi-display">Not set</span>
+              </div>
+            </div>
+            <button class="profile-link-btn" onclick="navigateTo('scanner'); setTimeout(()=>document.querySelector('[data-ctab=upi-settings]')?.click(),100)" data-i18n="profile_manage_upi">
+              Manage UPI Settings →
+            </button>
+          </div>
+
+          <!-- Conductor Invoice & Expense Card (shown only for conductors) -->
+          <div id="expense-entry-card" class="profile-section-card hidden">
+            <div class="profile-section-header">
+              <span class="profile-section-icon">🧾</span>
+              <span class="profile-section-title" data-i18n="profile_invoice_expense">Invoice &amp; Expense</span>
+            </div>
+            <p class="profile-section-desc" style="font-size: 13px; color: #666; margin-bottom: 16px; line-height: 1.4;" data-i18n="profile_invoice_expense_desc">
+              Submit shift invoices (fuel, tolls, maintenance) or miscellaneous expenses.
+            </p>
+            
+            <div class="profile-update-form" style="margin-top: 16px;">
+              <div class="form-group">
+                <label for="expense-type" data-i18n="profile_entry_type">Entry Type</label>
+                <select id="expense-type" class="form-select">
+                  <option value="invoice" data-i18n="profile_invoice_opt">🧾 Invoice (fuel, tolls, maintenance)</option>
+                  <option value="expense" data-i18n="profile_misc_opt">💸 Miscellaneous Expense</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="expense-amount" data-i18n="profile_amount_label">Amount (₹)</label>
+                <input type="number" id="expense-amount" placeholder="0.00" min="1" step="0.01" class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px;" />
+              </div>
+
+              <div class="form-group">
+                <label for="expense-details" data-i18n="profile_details_label">Details</label>
+                <textarea id="expense-details" rows="2" maxlength="500"
+                  placeholder="E.g. Diesel refill 30L at Highway Pump" data-i18n="profile_details_placeholder"
+                  class="form-input" style="width: 100%; padding: 10px 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px; resize: vertical; font-family: inherit;"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label for="expense-proof" data-i18n="profile_proof_label">Proof of Bill (optional · PNG, JPG, PDF · max 5 MB)</label>
+                <input type="file" id="expense-proof" accept=".png,.jpg,.jpeg,.pdf" class="form-input"
+                  style="width: 100%; padding: 8px 10px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 13px; cursor: pointer; background: #f9fafb;" />
+                <div id="expense-proof-preview" style="display: none; margin-top: 6px;"></div>
+              </div>
+
+              <button id="btn-submit-expense" class="btn-primary btn-block" style="width: 100%; margin-top: 8px;" data-i18n="profile_submit_entry">Submit Entry</button>
+              <div id="expense-submit-status" style="display: none; margin-top: 10px; font-size: 13px; padding: 10px 12px; border-radius: 8px; font-weight: 500; text-align: center;"></div>
+
+              <div id="expense-history" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 16px;"></div>
+            </div>
+          </div>
+
+          <!-- Conductor Assignment Card -->
+          <div id="assignment-section" class="profile-section-card hidden">
+            <div class="profile-section-header">
+              <span class="profile-section-icon">🚌</span>
+              <span class="profile-section-title" data-i18n="profile_current_assignment">Current Assignment</span>
+            </div>
+            <div class="profile-assignment-grid">
+              <div class="profile-assignment-item">
+                <span class="profile-assign-label" data-i18n="profile_route">Route</span>
+                <span class="profile-assign-value" id="profile-assigned-route">Not assigned</span>
+              </div>
+              <div class="profile-assignment-item">
+                <span class="profile-assign-label" data-i18n="profile_bus">Bus</span>
+                <span class="profile-assign-value" id="profile-assigned-bus">Not assigned</span>
+              </div>
+            </div>
+
+            <details class="profile-update-details">
+              <summary class="profile-update-summary" data-i18n="profile_update_assignment">Update Assignment</summary>
+              <div class="profile-update-form">
+                <div class="form-group">
+                  <label data-i18n="profile_route">Route</label>
+                  <select id="assignment-route" class="form-select">
+                    <option value="" data-i18n="select_route">Select Route</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label data-i18n="profile_bus">Bus</label>
+                  <select id="assignment-bus" class="form-select">
+                    <option value="" data-i18n="select_bus_number">Select Bus</option>
+                  </select>
+                </div>
+                <button id="update-assignment-btn" class="btn btn-primary btn-block" data-i18n="profile_update_assignment">Update Assignment</button>
+              </div>
+            </details>
+          </div>
+
+          <!-- Owner Subscription Card (visible only for owners) -->
+          <div id="owner-subscription-card" class="profile-section-card hidden">
+            <div class="profile-section-header">
+              <span class="profile-section-icon">💼</span>
+              <span class="profile-section-title" data-i18n="profile_owner_subscription">Owner Subscription</span>
+            </div>
+
+            <div class="owner-subscription-grid">
+              <div class="owner-subscription-stat">
+                <span class="owner-subscription-label" data-i18n="profile_status">Status</span>
+                <strong id="owner-sub-status">-</strong>
+              </div>
+              <div class="owner-subscription-stat">
+                <span class="owner-subscription-label" data-i18n="profile_expires_on">Expires On</span>
+                <strong id="owner-sub-expires">-</strong>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 12px;">
+              <label for="owner-sub-plan" data-i18n="profile_renew_plan">Renew Plan</label>
+              <select id="owner-sub-plan" class="form-select">
+                <option value="thirty_days" data-i18n="plan_thirty_days">30 Days</option>
+                <option value="monthly" data-i18n="plan_monthly">Monthly</option>
+                <option value="yearly" data-i18n="plan_yearly">Yearly</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="owner-sub-pay-method" data-i18n="profile_pay_using">Pay Using</label>
+              <select id="owner-sub-pay-method" class="form-select">
+                <option value="gpay">Google Pay</option>
+                <option value="phonepe">PhonePe</option>
+                <option value="upi">Any UPI</option>
+              </select>
+            </div>
+
+            <div class="owner-subscription-receiver">
+              <span>Receiver UPI:</span>
+              <strong id="owner-sub-receiver-upi">kunnathadi@icici</strong>
+            </div>
+
+            <div class="owner-subscription-price" id="owner-sub-price">Amount: -</div>
+
+            <button id="owner-sub-pay-btn" class="btn btn-primary btn-block" type="button" data-i18n="owner_sub_pay_btn">
+              Pay Subscription
+            </button>
+          </div>
+
+          <!-- Owner Assign Bus Section (visible only for owners) -->
+          <div id="owner-assign-section" class="profile-section-card hidden">
+            <div class="profile-section-header">
+              <span class="profile-section-icon">🚌</span>
+              <span class="profile-section-title" data-i18n="owner_assign_title">Assign Bus</span>
+            </div>
+
+            <!-- Assignment Form - Placed at top for easy access -->
+            <form id="owner-assign-form" style="margin-bottom:24px;">
+              <div class="form-group">
+                <label for="owner-assign-bus" data-i18n="profile_bus">Bus Number</label>
+                <select id="owner-assign-bus" class="form-select" required>
+                  <option value="" data-i18n="select_bus_placeholder">Select Bus</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="owner-assign-route" data-i18n="profile_route">Route</label>
+                <select id="owner-assign-route" class="form-select" required>
+                  <option value="" data-i18n="select_route_placeholder">Select Route</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="owner-assign-conductor" data-i18n="owner_assign_conductor_label">Conductor (Name or Mobile)</label>
+                <select id="owner-assign-conductor" class="form-select" required>
+                  <option value="" data-i18n="select_conductor_placeholder">Select Conductor</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-block" data-i18n="owner_assign_btn">Assign</button>
+              <div id="owner-assign-success" class="assign-confirm-frame hidden" style="margin-top:12px; padding:10px; border:1px solid #1a73e8; border-radius:6px; background:#f0f8ff; color:#1a73e8;">
+                <strong>Assignment Successful!</strong><br>
+                <span>Bus Number: <span id="owner-assign-confirm-bus"></span></span><br>
+                <span>Route: <span id="owner-assign-confirm-route"></span></span><br>
+                <span>Conductor: <span id="owner-assign-confirm-conductor"></span></span>
+              </div>
+            </form>
+
+            <!-- Owner Buses & Conductors List - Moved below the form -->
+            <div id="owner-buses-list-section" class="profile-section-card">
+              <div class="profile-section-header">
+                <span class="profile-section-icon">📋</span>
+                <span class="profile-section-title" data-i18n="owner_buses_conductors_title">Your Buses & Conductors</span>
+              </div>
+              <div id="owner-buses-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Public Advertisements -->
+          <div id="profile-ads-section" class="profile-ads-section" style="display:none;"></div>
+
+          <div class="profile-footer">
+            <p>ScanAndGo v1.1 · Kerala Multi-Zone</p>
+          </div>
+
+          <div id="profile-chat-fab" class="profile-chat-fab-wrap" aria-label="Public chat groups">
+            <button id="profile-chat-fab-btn" class="profile-chat-fab-btn" type="button" aria-expanded="false" aria-controls="profile-chat-panel">
+              <span class="profile-chat-fab-icon">💬</span>
+              <span data-i18n="profile_group_chat">Group Chat</span>
+            </button>
+
+            <div id="profile-chat-panel" class="profile-chat-panel hidden" role="dialog" aria-label="Public group chat">
+              <div class="profile-chat-panel-head">
+                <strong data-i18n="profile_community_chat">Community Chat</strong>
+                <button id="profile-chat-close-btn" type="button" class="profile-chat-close-btn" aria-label="Close chat">×</button>
+              </div>
+
+              <div class="profile-chat-room-switcher">
+                <button type="button" class="profile-chat-room-btn active" data-room="general" data-i18n="chat_general">General</button>
+                <button type="button" class="profile-chat-room-btn" data-room="movies" data-i18n="chat_movies">Movies</button>
+                <button type="button" class="profile-chat-room-btn" data-room="dating" data-i18n="chat_dating">Dating</button>
+                <button type="button" class="profile-chat-room-btn" data-room="politics" data-i18n="chat_politics">Politics</button>
+              </div>
+
+              <div id="profile-chat-messages" class="profile-chat-messages">
+                <div class="profile-chat-empty">No messages yet. Start the conversation.</div>
+              </div>
+
+              <form id="profile-chat-form" class="profile-chat-form">
+                <input id="profile-chat-input" type="text" maxlength="500" placeholder="Type a message..." autocomplete="off" required>
+                <button id="profile-chat-send-btn" type="submit">Send</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Bottom Navigation -->
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-page="map" id="nav-track">
+          <span class="nav-icon">🗺️</span>
+          <span class="nav-label" data-i18n="nav_track">Track</span>
+        </button>
+        <button class="nav-btn" data-page="routes" id="nav-routes">
+          <span class="nav-icon">🛣️</span>
+          <span class="nav-label" data-i18n="nav_routes">Routes</span>
+        </button>
+        <button class="nav-btn" data-page="book" id="nav-book">
+          <span class="nav-icon">🎟️</span>
+          <span class="nav-label" data-i18n="nav_book">Book</span>
+        </button>
+        <button class="nav-btn" data-page="wallet" id="nav-wallet">
+          <span class="nav-icon">💳</span>
+          <span class="nav-label" data-i18n="nav_wallet">Wallet</span>
+        </button>
+        <button class="nav-btn" data-page="tickets" id="nav-tickets">
+          <span class="nav-icon">📱</span>
+          <span class="nav-label" data-i18n="nav_tickets">Tickets</span>
+        </button>
+        <button class="nav-btn" data-page="owner-dashboard" id="nav-owner-dashboard" style="display:none">
+          <span class="nav-icon">📊</span>
+          <span class="nav-label" data-i18n="nav_dashboard">Dashboard</span>
+        </button>
+        <button class="nav-btn" data-page="admin-dashboard" id="nav-admin-dashboard" style="display:none">
+          <span class="nav-icon">🧾</span>
+          <span class="nav-label" data-i18n="nav_admin">Admin</span>
+        </button>
+        <button class="nav-btn" data-page="scanner" id="nav-scanner" style="display:none">
+          <span class="nav-icon">📷</span>
+          <span class="nav-label" data-i18n="nav_scan">Scan</span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- ─── Toast Notification ─── -->
+    <div id="toast" class="toast hidden"></div>
+
+    <!-- ─── Ticket Modal ─── -->
+    <div id="ticket-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div id="ticket-modal-body"></div>
+      </div>
+    </div>
+
+    <!-- ─── Poyaloo Pass Scan Modal ─── -->
+    <div id="poyaloo-scan-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content" style="max-width: 450px; padding: 24px;">
+        <button class="modal-close" id="poyaloo-scan-modal-close">✕</button>
+        <div style="text-align: center;">
+          <h3 style="margin-top: 0; margin-bottom: 12px; color: var(--btn-accent-start); font-size: 1.3rem; font-weight: 700;">📷 Scan Poyaloo Pass QR</h3>
+          <p style="font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.4;">Position the physical card or digital pass QR code inside the viewfinder, or select a photo of the card.</p>
+          
+          <div id="poyaloo-scan-reader-container" class="qr-reader-container" style="margin: 0 auto 16px; width: 100%; max-width: 280px; height: 280px; background: #000; border-radius: 12px; overflow: hidden; position: relative;">
+            <div id="poyaloo-scan-reader" style="width: 100%; height: 100%;"></div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+            <button id="poyaloo-scan-camera-btn" class="btn btn-primary btn-block" style="padding: 12px; font-weight: 600;">📷 Open Camera & Scan</button>
+            <button id="poyaloo-scan-stop-btn" class="btn btn-danger btn-block hidden" style="padding: 12px; font-weight: 600;">⏹ Stop Camera</button>
+            
+            <p style="text-align: center; margin: 8px 0; font-size: 12px; color: #64748b; font-weight: 500;">── or scan from photo ──</p>
+            
+            <label for="poyaloo-scan-file-input" class="btn btn-secondary btn-block" style="cursor: pointer; text-align: center; display: inline-block; padding: 12px; font-weight: 600; margin: 0;">
+              🖼️ Scan QR from Photo
+            </label>
+            <input type="file" id="poyaloo-scan-file-input" accept="image/*" style="display: none;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bus Expense Detail Modal (Owner) -->
+  <div id="bus-expense-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);overflow-y:auto;">
+    <div style="background:#fff;max-width:680px;margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:#1a1a2e;color:#fff;">
+        <span id="bus-expense-modal-title" style="font-size:16px;font-weight:700;">📋 Expense Details</span>
+        <button onclick="document.getElementById('bus-expense-modal').style.display='none'"
+          style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      <div id="bus-expense-modal-body" style="padding:20px 22px;max-height:70vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Pass Document Modal (Passenger) -->
+  <div id="pass-document-modal" style="display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.55);overflow-y:auto;">
+    <div style="background:#fff;max-width:680px;margin:40px auto;border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:#1a1a2e;color:#fff;">
+        <span style="font-size:16px;font-weight:700;">🎓 Pass Document</span>
+        <button onclick="document.getElementById('pass-document-modal').style.display='none'"
+          style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      <div id="pass-document-modal-body" style="padding:20px 22px;max-height:70vh;overflow-y:auto;text-align:center;"></div>
+    </div>
+  </div>
+
+  <script src="js/lang.js"></script>
+  <script src="js/app.js?v=20260420"></script>
+</body>
+</html>

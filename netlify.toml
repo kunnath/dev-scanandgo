@@ -1,0 +1,59 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# team.poyaloo.com → team / about us page rewrites
+[[redirects]]
+  from = "https://team.poyaloo.com/team/*"
+  to = "/team/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://team.poyaloo.com/*"
+  to = "/team/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "http://team.poyaloo.com/team/*"
+  to = "/team/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "http://team.poyaloo.com/*"
+  to = "/team/:splat"
+  status = 200
+  force = true
+
+# news.poyaloo.com → news page rewrites
+[[redirects]]
+  from = "https://news.poyaloo.com/news/*"
+  to = "/news/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "https://news.poyaloo.com/*"
+  to = "/news/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "http://news.poyaloo.com/news/*"
+  to = "/news/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "http://news.poyaloo.com/*"
+  to = "/news/:splat"
+  status = 200
+  force = true
+
+# Main app catch-all (must be last)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

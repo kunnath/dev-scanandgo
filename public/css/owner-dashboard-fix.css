@@ -1,0 +1,754 @@
+/* Fix alignment for + Assign Bus button in Owner Dashboard */
+.dashboard-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+.dashboard-section-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  flex: 1;
+}
+#open-assign-modal.btn.btn-primary {
+  margin: 0;
+  padding: 10px 18px;
+  font-size: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(30,60,90,0.07);
+  align-self: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Owner Assignment Form - Prominent styling at top */
+#owner-assign-form {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px !important;
+}
+
+#owner-assign-form .form-group {
+  margin-bottom: 16px;
+}
+
+#owner-assign-form .form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+#owner-assign-form .form-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  color: #334155;
+  transition: all 0.2s;
+}
+
+#owner-assign-form .form-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#owner-assign-form .btn-primary {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #e65100, #f57c00);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(230, 81, 0, 0.3);
+}
+
+#owner-assign-form .btn-primary:hover {
+  background: linear-gradient(135deg, #bf360c, #e65100);
+  box-shadow: 0 4px 8px rgba(230, 81, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+#owner-assign-form .btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Buses list section styling */
+#owner-buses-list-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#owner-buses-list-section .profile-section-header {
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+/* Owner buses table styling */
+.owner-buses-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e1e8ed;
+}
+
+.owner-buses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 800px; /* Ensures table doesn't get too compressed */
+}
+
+.owner-buses-table thead {
+  background-color: #f5f7fa;
+  border-bottom: 2px solid #e1e8ed;
+}
+
+.owner-buses-table th {
+  padding: 12px 10px;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.owner-buses-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #e1e8ed;
+  vertical-align: middle;
+}
+
+.owner-buses-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Mobile responsive: Convert to card layout */
+@media screen and (max-width: 768px) {
+  .owner-buses-table-wrapper {
+    border: none;
+    overflow-x: visible;
+  }
+  
+  .owner-buses-table {
+    min-width: 100%;
+    border: 0;
+  }
+  
+  .owner-buses-table thead {
+    display: none; /* Hide table header on mobile */
+  }
+  
+  .owner-buses-table tbody {
+    display: block;
+  }
+  
+  .owner-buses-table tr {
+    display: block;
+    margin-bottom: 16px;
+    background: #fff;
+    border: 1px solid #e1e8ed;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  }
+  
+  .owner-buses-table tbody tr:hover {
+    background-color: #fff;
+  }
+  
+  .owner-buses-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 4px;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  
+  .owner-buses-table td:last-child {
+    border-bottom: none;
+  }
+  
+  /* Add labels before each cell on mobile */
+  .owner-buses-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    width: 110px;
+  }
+  
+  .owner-buses-table td > * {
+    text-align: right;
+    flex: 1;
+  }
+}
+
+/* Very small mobile screens */
+@media screen and (max-width: 480px) {
+  .owner-buses-table td::before {
+    width: 90px;
+    font-size: 11px;
+  }
+  
+  .owner-buses-table td {
+    font-size: 13px;
+  }
+  
+  .owner-buses-table tr {
+    padding: 10px;
+  }
+}
+
+/* Status badges for bus status */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.status-idle {
+  background-color: #e0e7ff;
+  color: #4338ca;
+}
+
+.status-badge.status-running {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.status-maintenance {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge.status-breakdown {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.status-badge.status-off-route {
+  background-color: #ffe4e6;
+  color: #be123c;
+}
+
+/* =====================================================
+   ANALYTICS DASHBOARD STYLES
+   ===================================================== */
+
+/* Dashboard Metrics Grid */
+.dashboard-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e1e8ed;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.metric-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.metric-content {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* Metric card color variants */
+.metric-primary { border-left: 4px solid #3b82f6; }
+.metric-success { border-left: 4px solid #10b981; }
+.metric-info { border-left: 4px solid #06b6d4; }
+.metric-warning { border-left: 4px solid #f59e0b; }
+.metric-accent { border-left: 4px solid #8b5cf6; }
+.metric-purple { border-left: 4px solid #a855f7; }
+
+/* Dashboard Section */
+.dashboard-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e1e8ed;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Period Button Group */
+.btn-group {
+  display: flex;
+  gap: 4px;
+  background: #f1f5f9;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.period-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.period-btn:hover {
+  background: #ffe0cc;
+  color: #e65100;
+}
+
+.period-btn.active {
+  background: linear-gradient(135deg, #e65100, #f57c00);
+  color: white;
+  box-shadow: 0 2px 4px rgba(230, 81, 0, 0.3);
+}
+
+/* Revenue Chart */
+.chart-container {
+  min-height: 300px;
+  padding: 20px 0;
+}
+
+.revenue-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: 8px;
+  height: 240px;
+  padding: 0 10px;
+}
+
+.chart-bar-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 40px;
+  max-width: 80px;
+}
+
+.chart-bar {
+  width: 100%;
+  background: linear-gradient(180deg, #3b82f6 0%, #60a5fa 100%);
+  border-radius: 6px 6px 0 0;
+  min-height: 4px;
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.chart-bar:hover {
+  background: linear-gradient(180deg, #2563eb 0%, #3b82f6 100%);
+  transform: scaleY(1.02);
+}
+
+.bar-value {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.chart-bar:hover .bar-value {
+  opacity: 1;
+}
+
+.chart-label {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Analytics Tables */
+.analytics-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.analytics-table thead {
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.analytics-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #334155;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.analytics-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.analytics-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.analytics-table code {
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #334155;
+  font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+}
+
+.analytics-table small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* Status Pills */
+.status-pill {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-pill.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pill.status-idle {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.status-pill.status-completed {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pill.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pill.status-cancelled {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-pill.status-used {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+/* Empty State */
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+/* Refresh Button */
+#refresh-dashboard-btn {
+  width: auto;
+  padding: 8px 12px;
+  line-height: 1;
+}
+
+#owner-dashboard-live-status {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Mobile Responsiveness */
+@media screen and (max-width: 768px) {
+  #page-owner-dashboard .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  #page-owner-dashboard .owner-dashboard-actions {
+    margin-left: 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  #owner-dashboard-live-status {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    line-height: 1.3;
+    padding: 8px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+  }
+
+  #refresh-dashboard-btn {
+    justify-content: center;
+  }
+
+  .dashboard-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .metric-icon {
+    font-size: 28px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .dashboard-section {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-header h3 {
+    font-size: 1.1rem;
+    width: 100%;
+    text-align: left;
+    line-height: 1.3;
+  }
+
+  #page-owner-dashboard .dashboard-section:first-of-type .section-header h3 {
+    text-align: center;
+  }
+
+  .btn-group {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .period-btn {
+    flex: 1 1 calc(33.333% - 6px);
+    min-width: 110px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .chart-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .revenue-chart {
+    gap: 4px;
+    padding: 0 5px;
+    min-width: 560px;
+  }
+
+  .chart-bar-container {
+    min-width: 25px;
+    max-width: 50px;
+  }
+
+  .chart-label {
+    font-size: 9px;
+  }
+
+  /* Analytics tables convert to cards on mobile */
+  .analytics-table thead {
+    display: none;
+  }
+
+  .analytics-table,
+  .analytics-table tbody,
+  .analytics-table tr {
+    display: block;
+  }
+
+  .analytics-table tr {
+    margin-bottom: 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    background: white;
+  }
+
+  .analytics-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .analytics-table td:last-child {
+    border-bottom: none;
+  }
+
+  .analytics-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 11px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    width: 110px;
+  }
+
+  .analytics-table td > * {
+    text-align: right;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .dashboard-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card {
+    padding: 14px;
+  }
+
+  .metric-icon {
+    font-size: 24px;
+  }
+
+  .metric-value {
+    font-size: 18px;
+  }
+
+  .period-btn {
+    font-size: 11px;
+    padding: 6px 6px;
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  #page-owner-dashboard .dashboard-section:first-of-type .section-header {
+    margin-bottom: 14px;
+  }
+
+  #page-owner-dashboard .dashboard-section:first-of-type .section-header h3 {
+    font-size: 1rem;
+  }
+
+  .revenue-chart {
+    min-width: 520px;
+  }
+
+  .analytics-table td::before {
+    width: 90px;
+    font-size: 10px;
+  }
+}
